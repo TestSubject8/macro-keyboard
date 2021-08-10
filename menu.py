@@ -107,6 +107,21 @@ class Menu:
         # self.oled.text('Sameples', 0,0, None)
         # self.oled.text('Sameples', 10,10, None)
 
+    
+    def handle_rotation(self):
+        # position = self.encoder.position
+        chg = self.encoder.position - self.last_position
+        stime = time.monotonic()
+        # if position < self.last_position:
+        if chg < 0:
+            for i in range(-chg):
+                self.decrement()
+        # elif position > self.last_position:
+        elif chg > 0:
+            for i in range(chg):
+                self.increment()
+        self.last_position += chg
+        
     def handle_buttons(self):
         for b in range(len(self.buttons)-1):
             if self.buttons[b].value:
@@ -116,21 +131,14 @@ class Menu:
                 self.led.value = False
             else:
                 pass
-        if not self.button_rot.value and time.monotonic()-self.last_pressed > 0.3:
+        if not self.button_rot.value:
             # self.led.value = True # pointless - it just blips out instantly
             self.last_pressed = time.monotonic()
-            self.next()
+            while not self.button_rot.value: # for a click to work, during the hold-down, keep the rotation going
+                self.handle_rotation()
+            if time.monotonic()-self.last_pressed < 0.3: # finally click if the release was within 0.3s 
+                self.next()
             # self.led.value = False
-    
-    def handle_rotation(self):
-        position = self.encoder.position
-        stime = time.monotonic()
-        if position < self.last_position:
-            self.decrement()
-        elif position > self.last_position:
-            self.increment()
-        self.last_position = position
-        
 
     def increment(self):
         if self.button_rot.value:   # button_rot is wired such that is_pressed != value
