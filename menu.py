@@ -74,18 +74,18 @@ class Menu:
         self.oled.text(time_string, 0,0, None)
 
         # FPS / Temp
-        self.oled.text(str(self.prev_round_trip)[:4]+'s', 53, 15, None)
-        for i in range(14,23):
+        self.oled.text(str(self.prev_round_trip)[:4]+'s', 53, 13, None)
+        self.oled.text(str(microcontroller.cpu.temperature)[:4] + ' C', 85,13, None)
+        for i in range(12,21):
             self.oled.pixel(83,i,1) 
             self.oled.pixel(51,i,1) 
-        self.oled.text(str(microcontroller.cpu.temperature)[:4] + ' C', 85,15, None)
 
         # menu item labels
         labels = self.items[self.active].labels
         # self.oled.text(labels[0], 80,12, None)
-        self.oled.text(labels['but1'], 0,25, None)
-        self.oled.text(labels['but2'], 40,25, None)
-        self.oled.text(labels['but3'], 95,25, None)
+        self.oled.text(labels['but1'], 0,24, None)
+        self.oled.text(labels['but2'], 40,24, None)
+        self.oled.text(labels['but3'], 95,24, None)
 
         # handle individual spots on teh screen here, source only the text from the item obj
         self.oled.show()
