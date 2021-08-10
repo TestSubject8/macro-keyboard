@@ -12,6 +12,7 @@ import microcontroller
 from adafruit_hid.keyboard import Keyboard
 
 from adafruit_hid.consumer_control import ConsumerControl
+from adafruit_hid.consumer_control_code import ConsumerControlCode
 
 import busio as io
 import adafruit_ssd1306 as adisp
@@ -23,12 +24,17 @@ class Menu:
         self.device_setup()
         self.pin_setup()
 
-        self.buttons = (self.button1, self.button2, self.button3, )
+        self.buttons = (self.button1, self.button2, self.button3, self.button_rot)
         self.active = 0
 
         self.prev_round_trip = 0
         
         self.last_position = 0
+        self.last_pressed = 0
+
+    def next(self):
+        self.active += 1
+        self.active %= len(self.items)
 
     def device_setup(self):
         self.cc = ConsumerControl(usb_hid.devices)
@@ -68,7 +74,10 @@ class Menu:
         self.oled.text(time_string, 0,0, None)
 
         # FPS / Temp
-        # self.oled.text(str(self.prev_round_trip)[:4]+'s', 85, 5, None)
+        self.oled.text(str(self.prev_round_trip)[:4]+'s', 53, 15, None)
+        for i in range(14,23):
+            self.oled.pixel(83,i,1) 
+            self.oled.pixel(51,i,1) 
         self.oled.text(str(microcontroller.cpu.temperature)[:4] + ' C', 85,15, None)
 
         # menu item labels
@@ -99,7 +108,7 @@ class Menu:
         # self.oled.text('Sameples', 10,10, None)
 
     def handle_buttons(self):
-        for b in range(len(self.buttons)):
+        for b in range(len(self.buttons)-1):
             if self.buttons[b].value:
                 # print('key pressed', sc[1])
                 self.led.value = True
@@ -107,22 +116,35 @@ class Menu:
                 self.led.value = False
             else:
                 pass
+        if not self.button_rot.value and time.monotonic()-self.last_pressed > 0.3:
+            # self.led.value = True # pointless - it just blips out instantly
+            self.last_pressed = time.monotonic()
+            self.next()
+            # self.led.value = False
     
     def handle_rotation(self):
         position = self.encoder.position
+        stime = time.monotonic()
         if position < self.last_position:
-            if self.button_rot.value:   # button_rot is wired such that is_pressed != value
-                self.items[self.active].decrement()
-            else:
-                self.active -= 1
+            self.decrement()
         elif position > self.last_position:
-            if self.button_rot.value:
-                self.items[self.active].increment()
-            else:
-                self.active += 1
-                
-        self.active %= len(self.items)
+            self.increment()
         self.last_position = position
+        
+
+    def increment(self):
+        if self.button_rot.value:   # button_rot is wired such that is_pressed != value
+            self.cc.send(ConsumerControlCode.VOLUME_INCREMENT)
+        else:
+            self.cc.send(ConsumerControlCode.BRIGHTNESS_INCREMENT)
+
+
+    def decrement(self):
+        if self.button_rot.value:
+            self.cc.send(ConsumerControlCode.VOLUME_DECREMENT)
+        else:
+            self.cc.send(ConsumerControlCode.BRIGHTNESS_DECREMENT)
+
 
     def mainloop(self):
         while True:
