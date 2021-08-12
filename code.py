@@ -1,32 +1,40 @@
-import items
-import menu
-from adafruit_hid.consumer_control_code import ConsumerControlCode
+import menu, items
+
 from adafruit_hid.keycode import Keycode
+from adafruit_hid.consumer_control_code import ConsumerControlCode
 
 m = menu.Menu()
 
-items.Keyboard(m, {'name': 'Windows', 'rot_fun': 'Vol', \
-    'but1': 'L WS', 'but2': 'WIN Tab', 'but3': 'R WS'}, \
-    { 0: [m.kbd.send, (Keycode.CONTROL, Keycode.WINDOWS, Keycode.LEFT_ARROW)], \
-      1: [m.kbd.send, (Keycode.WINDOWS, Keycode.TAB)], \
-      2: [m.kbd.send, (Keycode.CONTROL, Keycode.WINDOWS, Keycode.RIGHT_ARROW)], \
-    }, \
-)
+def scroll(kbd, _, chg):
+	if chg < 0:
+		for i in range(-chg):
+			kbd.send(Keycode.UP_ARROW)
+	elif chg > 0:
+		for i in range(chg):
+			kbd.send(Keycode.DOWN_ARROW)
 
-items.Keyboard(m, {'name': 'OBS', 'rot_fun': 'BRI', \
-    'but1': 'FACE', 'but2': 'Gaem', 'but3': 'Table'}, \
-    { 0: [m.kbd.send, (Keycode.ALT, Keycode.ONE)], \
-      1: [m.kbd.send, (Keycode.ALT, Keycode.TWO)], \
-      2: [m.kbd.send, (Keycode.ALT, Keycode.THREE)], \
-    }, \
-)
+def vol(_, cc, chg):
+	print('called')
+	if chg < 0:
+		for i in range(-chg):
+			cc.send(ConsumerControlCode.VOLUME_DECREMENT)
+			print('sent')
+	elif chg > 0:
+		for i in range(chg):
+			cc.send(ConsumerControlCode.VOLUME_INCREMENT)
 
-items.Keyboard(m, {'name': 'Media', 'rot_fun': 'BRI', \
-    'but1': 'Play', 'but2': 'Prev', 'but3': 'Next'}, \
-    { 0: [m.cc.send, (ConsumerControlCode.PLAY_PAUSE, )], \
-      1: [m.cc.send, (ConsumerControlCode.SCAN_PREVIOUS_TRACK, )], \
-      2: [m.cc.send, (ConsumerControlCode.SCAN_NEXT_TRACK, )], \
-    }, \
-)
+def bright(_, cc, chg):
+	if chg < 0:
+		for i in range(-chg):
+			cc.send(ConsumerControlCode.BRIGHTNESS_DECREMENT)
+	elif chg > 0:
+		for i in range(chg):
+			cc.send(ConsumerControlCode.BRIGHTNESS_INCREMENT)
+
+
+items.Keyboard(m, 'VOL', vol)
+items.Keyboard(m, 'BRI', bright)
+items.Keyboard(m, 'SCR', scroll)
+
 
 m.mainloop()

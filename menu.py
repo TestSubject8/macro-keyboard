@@ -9,6 +9,7 @@ import usb_hid
 
 import microcontroller
 
+from adafruit_hid.keycode import Keycode
 from adafruit_hid.keyboard import Keyboard
 
 from adafruit_hid.consumer_control import ConsumerControl
@@ -24,17 +25,15 @@ class Menu:
         self.device_setup()
         self.pin_setup()
 
-        self.buttons = (self.button1, self.button2, self.button3, self.button_rot)
-        self.active = 0
+        self.buttons = (self.button1, self.button2, self.button3, )
 
         self.prev_round_trip = 0
-        
+
         self.last_position = 0
         self.last_pressed = 0
 
-    def next(self):
-        self.active += 1
-        self.active %= len(self.items)
+        self.active = 0
+        self.index = 0
 
     def device_setup(self):
         self.cc = ConsumerControl(usb_hid.devices)
@@ -63,6 +62,15 @@ class Menu:
         self.button_rot = digitalio.DigitalInOut(board.GP12) 
         self.button_rot.switch_to_input(pull=digitalio.Pull.UP)
 
+    def next(self):
+        self.index += 1
+        self.index %= len(self.items)
+
+    def set_menu(self, b):
+        index = self.index + b
+        index %= len(self.items)
+        self.active = index
+
     def show(self):
         self.oled.fill(0)
         # self.items[active].show()
@@ -74,18 +82,26 @@ class Menu:
         self.oled.text(time_string, 0,0, None)
 
         # FPS / Temp
-        self.oled.text(str(self.prev_round_trip)[:4]+'s', 53, 13, None)
-        self.oled.text(str(microcontroller.cpu.temperature)[:4] + ' C', 85,13, None)
-        for i in range(12,21):
-            self.oled.pixel(83,i,1) 
+        self.oled.text(str(self.prev_round_trip)[:4]+'s', 53, 0, None)
+        self.oled.text(str(microcontroller.cpu.temperature)[:4] + ' C', 85,0, None)
+        for i in range(0,10):
             self.oled.pixel(51,i,1) 
+            self.oled.pixel(83,i,1) 
 
-        # menu item labels
-        labels = self.items[self.active].labels
-        # self.oled.text(labels[0], 80,12, None)
-        self.oled.text(labels['but1'], 0,24, None)
-        self.oled.text(labels['but2'], 40,24, None)
-        self.oled.text(labels['but3'], 95,24, None)
+        # active label and custom display
+        # self.oled.text(self.items[self.active].label, 38,10, None)
+        self.items[self.active].show(self.oled)
+
+        for i in range(3):
+            ind = self.index+i 
+            ind %= len(self.items)
+            if ind == self.active:
+                j = -4
+                for k in range(15):
+                    self.oled.pixel(i*40+k, 30, 1)
+            else:
+                j = 0
+            self.oled.text(self.items[ind].label, i*40,24+j, None)
 
         # handle individual spots on teh screen here, source only the text from the item obj
         self.oled.show()
@@ -111,76 +127,33 @@ class Menu:
     def handle_rotation(self):
         # position = self.encoder.position
         chg = self.encoder.position - self.last_position
-        stime = time.monotonic()
-        # if position < self.last_position:
-        if chg < 0:
-            for i in range(-chg):
-                self.decrement()
-        # elif position > self.last_position:
-        elif chg > 0:
-            for i in range(chg):
-                self.increment()
-        self.last_position += chg
+        if chg:
+            # self.kbd.send(Keycode.UP_ARROW)
+            self.items[self.active].rot_func(chg)
+            self.last_position += chg
         
     def handle_buttons(self):
-        for b in range(len(self.buttons)-1):
+        for b in range(len(self.buttons)):
             if self.buttons[b].value:
                 # print('key pressed', sc[1])
                 self.led.value = True
-                self.items[self.active].button_press(b)  # debounce handled in button - allows for long press / modifier functionality
+                self.set_menu(b)
+                  # debounce handled in button - allows for long press / modifier functionality
                 self.led.value = False
             else:
                 pass
         if not self.button_rot.value:
-            # self.led.value = True # pointless - it just blips out instantly
-            self.last_pressed = time.monotonic()
-            while not self.button_rot.value: # for a click to work, during the hold-down, keep the rotation going
-                self.handle_rotation()
-            if time.monotonic()-self.last_pressed < 0.3: # finally click if the release was within 0.3s 
-                self.next()
-            # self.led.value = False
-
-    def increment(self):
-        if self.button_rot.value:   # button_rot is wired such that is_pressed != value
-            self.cc.send(ConsumerControlCode.VOLUME_INCREMENT)
-        else:
-            self.cc.send(ConsumerControlCode.BRIGHTNESS_INCREMENT)
-
-
-    def decrement(self):
-        if self.button_rot.value:
-            self.cc.send(ConsumerControlCode.VOLUME_DECREMENT)
-        else:
-            self.cc.send(ConsumerControlCode.BRIGHTNESS_DECREMENT)
+            self.next()
+            
 
 
     def mainloop(self):
         while True:
             start_time = time.monotonic()
 
-            self.show()
-
             self.handle_buttons()
             self.handle_rotation()
 
-
-            # All display items between these 
-            # show_labels(menu[2])
-            
-            # grid()
-
-            # if not button_rot.value:
-            #     handle_menu_selector()
-
-            # all display items must be between theseP
-            # oled.show()
-
-            
-
-            # time.sleep(0.2)
+            self.show()
 
             self.prev_round_trip = time.monotonic() - start_time
-            # press CTRL+K, which in a web browser will open the search dialog
-            # elif search.value:
-            #     kbd.send(Keycode.CONTROL, Keycode.K)
-        
