@@ -26,27 +26,34 @@ def bright(_, cc, chg):
 
 # SCROLL Menu Item
 
-def scroll_action(menu):
-	chg = menu.encoder.position - menu.last_position
-	if chg < 0:
-		if menu.button_rot.value:
-			code = Keycode.UP_ARROW
-		else:
-			code = Keycode.LEFT_ARROW
-		for i in range(-chg):
-			menu.kbd.send(code)
+def scroll_action(button, chg):
+	
 
-	elif chg > 0:
-		if menu.button_rot.value:
-			code = Keycode.DOWN_ARROW
-		else:
-			code = Keycode.RIGHT_ARROW
-		for i in range(chg):
-			menu.kbd.send(code)
+def scroll_action(self, menu):
+	self.code = None
+	chg = menu.encoder.position - menu.last_position
+	
+	codelist = [vol, bright]
+
+	for i in range(len(menu.buttons)-1):
+		if menu.buttons[i].value:
+			choice = codelist[i]
+	
+	
 	menu.last_position += chg
 
-def scroll_disp(menu):
-	menu.oled.text('Next time then', 20,20, None)
+def scroll_disp(self, menu):
+	if self.code == Keycode.UP_ARROW:
+		menu.oled.text('^', 25,25, None)
+	elif self.code == Keycode.LEFT_ARROW:
+		menu.oled.text('<-', 25,25, None)
+	elif self.code == Keycode.DOWN_ARROW:
+		menu.oled.text('v', 25,25, None)
+	elif self.code == Keycode.RIGHT_ARROW:
+		menu.oled.text('->', 25,25, None)
+	else:
+		pass
+	# menu.oled.text('Next time then', 20,20, None)
 
 items.Item(m, scroll_disp, scroll_action)
 
