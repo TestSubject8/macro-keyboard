@@ -27,14 +27,19 @@ class Item:
         # active label and custom display
         # self.oled.text(self.items[self.active].label, 38,10, None)
 
-        self.disp_func(self.menu)
+        self.disp_func(self, self.menu)
         o.show()
 
+    def action(self):
+        if self.menu.button3.value and time.monotonic()-self.last_pressed>0.2:
+            self.menu.next()
+            self.last_pressed = time.monotonic()
+        self.action_func(self, self.menu)
 
     def mainloop(self):
         while True:
             stime = time.monotonic()
-            self.action_func(self.menu)
+            self.action_func(self, self.menu)
             self.disp()
             self.menu.prev_round_trip = time.monotonic() - stime
         
