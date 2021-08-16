@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import time
 import board
 import digitalio
@@ -107,46 +108,60 @@ def run(init=None):
 	show_living()
 	print(living)
 
+import menu, items
 
-	while living:
-		# while not button1.value: pass
-		if button1.value: reset_living(70)
-		stime = time.monotonic()
+from adafruit_hid.keycode import Keycode
+from adafruit_hid.consumer_control_code import ConsumerControlCode
 
-		cc.clear()
-
-		for x,y in living:
-			cc[(x,y)] = 0
-			check_surroundings(x,y)
-
-		print(cc)
-		# Conway rules: 
-		for c in cc:
-			if cc[c] < 2 or cc[c] > 3:
-				if c in living:
-					living.remove(c)
-					# print(c, 'died')
-			elif cc[c] == 3:
-				if c not in living:
-					living.append(c)
-					# print(c,'born')
-		show_living()
-		
-		# print(time.monotonic() - stime)
-		
-		time.sleep(0.25)
+m = menu.Menu()
 
 
-while True:
-	# run([(10,15), (15,15), (10,10)])
-	run()
-	# run([(5,10),(10,15),(15,5),(15,10),(15,15)]) # glider 1
+def vol(_, cc, chg):
+	print('called')
+	if chg < 0:
+		for i in range(-chg):
+			cc.send(ConsumerControlCode.VOLUME_DECREMENT)
+			print('sent')
+	elif chg > 0:
+		for i in range(chg):
+			cc.send(ConsumerControlCode.VOLUME_INCREMENT)
 
+def bright(_, cc, chg):
+	if chg < 0:
+		for i in range(-chg):
+			cc.send(ConsumerControlCode.BRIGHTNESS_DECREMENT)
+	elif chg > 0:
+		for i in range(chg):
+			cc.send(ConsumerControlCode.BRIGHTNESS_INCREMENT)
 
+# SCROLL Menu Item
 
-# print(oled.value(1,1))
+def scroll_action(menu):
+	chg = menu.encoder.position - menu.last_position
+	if chg < 0:
+		if menu.button_rot.value:
+			code = Keycode.UP_ARROW
+		else:
+			code = Keycode.LEFT_ARROW
+		for i in range(-chg):
+			menu.kbd.send(code)
 
-# for i in range(xmax):
-# 	for j in range(ymax):
-		# oled.pixel(i,j,1)
+	elif chg > 0:
+		if menu.button_rot.value:
+			code = Keycode.DOWN_ARROW
+		else:
+			code = Keycode.RIGHT_ARROW
+		for i in range(chg):
+			menu.kbd.send(code)
+	menu.last_position += chg
 
+def scroll_disp(menu):
+	menu.oled.text('Next time then', 20,20, None)
+
+items.Item(m, scroll_disp, scroll_action)
+
+# ensure screensaver is added first, make some timer to go back to index = 0
+# items.Keyboard(m, 'VOL', vol)
+# items.Keyboard(m, 'BRI', bright)
+# items.Keyboard(m, 'SCR', scroll)
+m.next()

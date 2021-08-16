@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2021 ladyada for Adafruit Industries
 # SPDX-License-Identifier: MIT
 
-import time
+import time, rtc
 import board
 import rotaryio
 import digitalio
@@ -19,7 +19,6 @@ import busio as io
 import adafruit_ssd1306 as adisp
 
 class Menu:
-    items = []
 
     def __init__(self):
         self.device_setup()
@@ -32,14 +31,23 @@ class Menu:
         self.last_position = 0
         self.last_pressed = 0
 
+        self.items = []
         self.active = 0
         self.index = 0
+
+        # Setting up time
+        self.rtc = rtc.RTC()
+        lctime = self.rtc.datetime
+        self.rtc.datetime = time.struct_time(lctime[0],lctime[1],lctime[2],lctime[3]-6,lctime[4]-30,lctime[5],lctime[6],lctime[7],lctime[8])
+
 
     def device_setup(self):
         self.cc = ConsumerControl(usb_hid.devices)
         self.kbd = Keyboard(usb_hid.devices)
         self.i2c = io.I2C(board.GP5, board.GP4)
         self.oled = adisp.SSD1306_I2C(128, 32, self.i2c)
+        self.oled.fill(1)
+        self.oled.show()
 
         self.encoder = rotaryio.IncrementalEncoder(board.GP16, board.GP17)
     # oled.setRotation(2)
@@ -65,6 +73,7 @@ class Menu:
     def next(self):
         self.index += 1
         self.index %= len(self.items)
+        self.items[self.index].mainloop()
 
     def set_menu(self, b):
         index = self.index + b
@@ -72,24 +81,6 @@ class Menu:
         self.active = index
 
     def show(self):
-        self.oled.fill(0)
-        # self.items[active].show()
-        # self.grid()
-
-        # Time / countdown
-        _, _, _, hour, minute, _, _, _, _ = time.localtime()
-        time_string = '%02d'%(hour) + ':' + '%02d'%(minute)
-        self.oled.text(time_string, 0,0, None)
-
-        # FPS / Temp
-        self.oled.text(str(self.prev_round_trip)[:4]+'s', 53, 0, None)
-        self.oled.text(str(microcontroller.cpu.temperature)[:4] + ' C', 85,0, None)
-        for i in range(0,10):
-            self.oled.pixel(51,i,1) 
-            self.oled.pixel(83,i,1) 
-
-        # active label and custom display
-        # self.oled.text(self.items[self.active].label, 38,10, None)
         self.items[self.active].show(self.oled)
 
         for i in range(3):
@@ -144,16 +135,3 @@ class Menu:
                 pass
         if not self.button_rot.value:
             self.next()
-            
-
-
-    def mainloop(self):
-        while True:
-            start_time = time.monotonic()
-
-            self.handle_buttons()
-            self.handle_rotation()
-
-            self.show()
-
-            self.prev_round_trip = time.monotonic() - start_time
