@@ -3,3 +3,6 @@ Implement a ReLU to plot the temp (or whatever)
 Implement inputs (buttons, find a potentiometer somewhere?)
 
 Order the piezo sensors for the pico
+
+In progress: reference.py -> splits over the available area to pinpoint where the input is coming from
+  Needs a binary tree or something to store all the different areas

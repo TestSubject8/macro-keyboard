@@ -63,9 +63,9 @@ def temp(draw, args):
   draw.text((10,10),cpu_temp)
 
 while(True):
-  # luma_oled.frame(write_text,("Finally did it \n Found the problem \n       and fixed it \n Cost just sanity"),10)
+  luma_oled.frame(write_text,("Hello Ash!"),10)
   #luma_oled.frame(pixel_bounce)
   #pixel_bounce()
 
-  cpu_temp = os.popen("vcgencmd measure_temp").readline().replace("temp=", "")
-  luma_oled.frame(write_text, cpu_temp, 1)
+  # cpu_temp = os.popen("vcgencmd measure_temp").readline().replace("temp=", "")
+  # luma_oled.frame(write_text, cpu_temp, 1)
