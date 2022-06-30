@@ -7,12 +7,19 @@ import os
 serial = spi(device=0, port=0) #, gpio_DC=6,gpio_RST=4,gpio_CS=5)
 device = sh1106(serial, rotate=2)
 
+last = time.time()
 
 def frame(callback, args=None, sleep_time=0):
+  global last
+  now = time.time()
+  fps = round(1/(now-last),2)
   with canvas(device) as draw:
     callback(draw, args)
+    draw.rectangle((80,10,130,15),fill='black',outline='black')
+    draw.text((80,10),str(fps),fill='white')
   time.sleep(sleep_time)
   device.clear()
+  last = time.time()
 
 #while True:
 #  x = 2

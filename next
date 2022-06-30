@@ -6,3 +6,5 @@ Order the piezo sensors for the pico
 
 In progress: reference.py -> splits over the available area to pinpoint where the input is coming from
   Needs a binary tree or something to store all the different areas
+
+https://medium.com/@inderpreetsinghchhabra/using-python3-with-ros-kinetic-2488354efece 
