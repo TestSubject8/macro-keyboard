@@ -1,6 +1,6 @@
 import luma_oled
 import socket
-import os
+import os, sys
 import time
 
 def set_border(draw, opts):
@@ -9,7 +9,10 @@ def set_border(draw, opts):
 def write_text(draw, opts):
   # print(opts)
   draw.rectangle(luma_oled.device.bounding_box, outline='white', fill='black')
-  draw.multiline_text((30,30),opts, align='center', fill='white')
+  draw.multiline_text((15,25),opts, align='center', fill='white')
+
+def overlay_text(draw, opts):
+  draw.multiline_text((15,25),opts, align='center', fill='white')
 
 def dot(draw, opts):
   x = int(opts[0])
@@ -72,11 +75,64 @@ def ip_echo():
       s.close()
 
   luma_oled.frame(write_text, (IP), 10)
-  
 
-while(True):
-  # luma_oled.frame(write_text,("Hello Ash!"),10)
-  # luma_oled.frame(pixel_bounce)
-  # pixel_bounce()
-  ip_echo()
-  # luma_oled.frame(temp, sleep_time=1)
+def countdown(dur):
+  start_time = time.monotonic()
+  elapsed = 0
+  while elapsed <= dur:
+    elapsed = round(time.monotonic() - start_time, 0)
+    rem = (dur - elapsed)/60
+    remaining = round(rem, 3)
+    # luma_oled.frame(write_text, (str(remaining)+' m'), 1)
+    # luma_oled.frame(blocks, int(rem), 1)
+    luma_oled.frame(notify, int(rem), 1)
+  for i in ['white', 'black']:
+    luma_oled.frame(flash, i, 0.5)
+
+    # I can make this way more complex by adding the intended block of lights to represent minutes 
+    # make it a separate thing
+    # 
+    # For each min remaining draw a little block and iterate the position of them dynamically
+    # Keep a pointer to the next little block and update it to the right location if it crosses a border
+
+def notify(draw, args):
+  remaining = args
+  count = 0
+
+  row = 0
+  column = 0
+
+  for i in range(remaining):
+    if i!=0 and i%5==0:
+      row += 1
+      column = 0
+    block(draw, column*25, row*25)
+    column += 1
+
+    # In order to overlay the text on the blocks
+    luma_oled.frame(overlay_text,"PUTTING AWAY DRYS",10)
+
+def block(draw, x, y):
+  draw.rectangle((x,y,x+23,y+23), fill='white')
+
+def flash(draw, args):
+  draw.rectangle(luma_oled.device.bounding_box, fill=args)
+
+try: 
+  while(True):
+    # luma_oled.frame(write_text,("Hello Ash!"),10)
+
+    # mi = open('moon_info','r')
+    # lines = mi.readlines()
+    # print(''.join(lines))
+    # luma_oled.frame(write_text,(''.join(lines)),10)
+    # luma_oled.frame(pixel_bounce)
+    # pixel_bounce()
+    # ip_echo()
+    # luma_oled.frame(temp, sleep_time=1)
+    # countdown(2)
+    countdown(10*60)
+    # countdown(2*60)
+except KeyboardInterrupt:
+  luma_oled.device.cleanup()
+  sys.exit()
