@@ -17,8 +17,14 @@ def frame(callback, args=None, sleep_time=0):
   fps = round(1/(now-last),2)
   with canvas(device) as draw:
     callback(draw, args)
-    draw.rectangle((80,50,130,70),fill='black',outline='black')
+
+    # Bottom text - FPS
+    draw.rectangle((80,55,130,65),fill='black',outline='black')
     draw.text((80,50),str(fps),fill='white')
+
+    # Middle text - Task
+    draw.rectangle((8,8,110,27),fill='black',outline='white')
+    draw.text((10,15),"START A NEW LOAD", align='center', fill='white', stroke_fill='black')
   time.sleep(sleep_time)
   device.clear()
   last = time.time()

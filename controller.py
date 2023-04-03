@@ -110,7 +110,7 @@ def notify(draw, args):
     column += 1
 
     # In order to overlay the text on the blocks
-    luma_oled.frame(overlay_text,"PUTTING AWAY DRYS",10)
+    # luma_oled.frame(overlay_text,"PUTTING AWAY DRYS",10)
 
 def block(draw, x, y):
   draw.rectangle((x,y,x+23,y+23), fill='white')
